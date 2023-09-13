@@ -132,6 +132,8 @@ function initAzi(sessionId, dealer) {
 function bet(betValue, action, sessionId) {
   const room = rooms[sessionId]
 
+  console.log(room)
+
   if (room.gamePhase === 'azi') {
     const activePlayers = room.players.filter(player => player.active && player.aziBet !== 0)
     activePlayers.forEach((player, index) => {
