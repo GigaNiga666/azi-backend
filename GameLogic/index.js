@@ -53,7 +53,7 @@ function playerConnect(sessionId, username, coins, minBet) {
     players.push({username, coins, id: this.id, move: false, active: false, payoff: 0, bet: 0})
 
     if (room.size === 2) {
-      players.at(-1).active = true
+      players[players.length - 1].active = true
       io.to(sessionId).emit('newPlayerJoin', currentRoom.players)
       initGamePhase(sessionId)
     } else {
