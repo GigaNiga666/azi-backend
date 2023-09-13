@@ -2,7 +2,6 @@ const shuffle = require("./heplers/shuffle");
 const sleep = require("./heplers/sleep");
 const randomNumber = require("./heplers/randomNumber");
 const takeElement = require("./heplers/takeElement");
-const {log} = require("nodemon/lib/utils");
 let io;
 
 const rooms = {}
@@ -26,8 +25,8 @@ function disconnect() {
       const index = currentRoom.players.indexOf(player)
       const activePlayers = currentRoom.players.filter(player1 => player1.active)
       if (player === room.dealer) room.dealer = takeElement(activePlayers, activePlayers.indexOf(player) + 1)
-      if (player.move = true && room.gamePhase === 'trade' || room.gamePhase === 'blindTrade') bet(0, 'pass', room)
-      else if (player.move = true) takeElement(activePlayers, activePlayers.indexOf(player) + 1)
+      if (player.move && room.gamePhase === 'trade' || room.gamePhase === 'blindTrade') bet(0, 'pass', room)
+      else if (player.move) takeElement(activePlayers, activePlayers.indexOf(player) + 1)
 
       currentRoom.players.splice(index, 1)
 
@@ -53,7 +52,7 @@ function playerConnect(sessionId, username, coins, minBet) {
     this.join(sessionId)
     players.push({username, coins, id: this.id, move: false, active: false, payoff: 0, bet: 0})
 
-    if (room.size === 5) {
+    if (room.size === 2) {
       players.at(-1).active = true
       io.to(sessionId).emit('newPlayerJoin', currentRoom.players)
       initGamePhase(sessionId)
