@@ -2,6 +2,7 @@ const shuffle = require("../heplers/shuffle");
 const sleep = require("../heplers/sleep");
 const randomNumber = require("../heplers/randomNumber").randomNumber;
 const takeElement = require("../heplers/takeElement");
+const {answerWebAppQueryHandler} = require("../TelegramBot");
 let io;
 
 const rooms = {}
@@ -22,12 +23,12 @@ function disconnect() {
     if (room !== this.id) {
       const currentRoom = rooms[room]
       const player = currentRoom.players.find(player => player.id === this.id)
-      console.log(player.username)
       const index = currentRoom.players.indexOf(player)
       const activePlayers = currentRoom.players.filter(player1 => player1.active)
       if (player === room.dealer) room.dealer = takeElement(activePlayers, activePlayers.indexOf(player) + 1)
       if (player.move && room.gamePhase === 'trade' || room.gamePhase === 'blindTrade') bet(0, 'pass', room)
       else if (player.move) takeElement(activePlayers, activePlayers.indexOf(player) + 1)
+      answerWebAppQueryHandler(player.queryId)
 
       currentRoom.players.splice(index, 1)
 
