@@ -34,13 +34,13 @@ async function startBot() {
   bot.launch()
 }
 
-async function answerWebAppQueryHandler(queryId) {
+async function answerWebAppQueryHandler(queryId, msg) {
   await telegram.answerWebAppQuery(queryId, {
     type:'article',
     id: queryId,
     title: 'Результаты игры',
     input_message_content: {
-      message_text: 'Вы остались без денег('
+      message_text: msg
     }
   })
 }

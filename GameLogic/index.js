@@ -18,7 +18,7 @@ function init(webSocket) {
   })
 }
 
-function disconnect() {
+function disconnect(message = null) {
   for (const room of this.rooms) {
     if (room !== this.id) {
       const currentRoom = rooms[room]
@@ -28,7 +28,8 @@ function disconnect() {
       if (player === room.dealer) room.dealer = takeElement(activePlayers, activePlayers.indexOf(player) + 1)
       if (player.move && room.gamePhase === 'trade' || room.gamePhase === 'blindTrade') bet(0, 'pass', room)
       else if (player.move) takeElement(activePlayers, activePlayers.indexOf(player) + 1)
-      answerWebAppQueryHandler(player.queryId)
+      let exitMsg = player.coins < room.minBet ? 'У вас недостаточно денег для ставок' : message
+      if (exitMsg) answerWebAppQueryHandler(player.queryId, exitMsg)
 
       currentRoom.players.splice(index, 1)
 
@@ -62,9 +63,9 @@ function playerConnect(sessionId, username, coins, minBet, queryId) {
       io.to(sessionId).emit('newPlayerJoin', currentRoom.players, currentRoom.trumpedCard)
     }
   } else if (coins < rooms[sessionId].minBet) {
-    this.emit('error', 'Недостаточно монет для участвии в ставках')
+    disconnect('У вас недостаточно денег для ставок')
   } else {
-    this.emit('error', 'There are 6 people already playing in this room')
+    disconnect('Данная комната полная')
   }
 }
 
@@ -74,7 +75,7 @@ function initGamePhase(sessionId, dealerPlayer = null) {
   const players = room.players
 
   for (const player of players) {
-    if (player.coins < room.minBet) {     //TODO недостаточно монет для участвия в ставках, ОГРАНИЧТЬ КОЛ-ВО МОНЕТ
+    if (player.coins < room.minBet) {
       player.active = false
     } else {
       player.bet = 0
@@ -103,7 +104,7 @@ function initAzi(sessionId, dealer) {
   const players = room.players
 
   for (const player of players) {
-    if (player.coins < room.minBet && player.action !== 'round') {     //TODO недостаточно монет для участвия в ставках, ОГРАНИЧТЬ КОЛ-ВО МОНЕТ
+    if (player.coins < room.minBet && player.action !== 'round') {
       player.active = false
     } else {
 
@@ -203,6 +204,7 @@ function bet(betValue, action, sessionId) {
           player.active = false
           player.bet = 0
           player.cards = []
+          player.amountPass += 1
         }
         else if (action === 'allIn') {
           if (player.bet > room.descBet) {
@@ -262,6 +264,8 @@ function bet(betValue, action, sessionId) {
         if (!allIn && maxRaise > nextPlayer.coins) maxRaise = nextPlayer.coins
 
         io.to(sessionId).emit('bet', room.players, room.bank, minRaise, maxRaise, room.descBet, canCallValue, allIn, canUpBet)
+
+        if (player.amountPass === 2) disconnect('Вы слишком много раз отказывались от ставок')
       }
     })
   }
