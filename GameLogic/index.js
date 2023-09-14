@@ -76,7 +76,7 @@ function initGamePhase(sessionId, dealerPlayer = null) {
 
   for (const player of players) {
     if (player.coins < room.minBet) {
-      player.active = false
+      disconnect('У вас недостаточно денег для участия')
     } else {
       player.bet = 0
       player.aziBet = 0
@@ -105,7 +105,7 @@ function initAzi(sessionId, dealer) {
 
   for (const player of players) {
     if (player.coins < room.minBet && player.action !== 'round') {
-      player.active = false
+      disconnect('У вас недостаточно денег для участия')
     } else {
 
       if (player.action !== 'round') {
