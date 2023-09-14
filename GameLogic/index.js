@@ -1,7 +1,7 @@
-const shuffle = require("./heplers/shuffle");
-const sleep = require("./heplers/sleep");
-const randomNumber = require("./heplers/randomNumber");
-const takeElement = require("./heplers/takeElement");
+const shuffle = require("../heplers/shuffle");
+const sleep = require("../heplers/sleep");
+const randomNumber = require("../heplers/randomNumber").randomNumber;
+const takeElement = require("../heplers/takeElement");
 let io;
 
 const rooms = {}
@@ -22,6 +22,7 @@ function disconnect() {
     if (room !== this.id) {
       const currentRoom = rooms[room]
       const player = currentRoom.players.find(player => player.id === this.id)
+      console.log(player.username)
       const index = currentRoom.players.indexOf(player)
       const activePlayers = currentRoom.players.filter(player1 => player1.active)
       if (player === room.dealer) room.dealer = takeElement(activePlayers, activePlayers.indexOf(player) + 1)
@@ -35,13 +36,13 @@ function disconnect() {
   }
 }
 
-function playerConnect(sessionId, username, coins, minBet) {
+function playerConnect(sessionId, username, coins, minBet, queryId) {
   const room = io.sockets.adapter.rooms.get(sessionId)
 
   if (room === undefined) {
     this.join(sessionId)
     rooms[sessionId] = {
-      players: [{username, coins, id: this.id, move: false, active: true, payoff: 0, bet: 0}],
+      players: [{username, coins, id: this.id, move: false, active: true, payoff: 0, bet: 0, queryId : queryId ? queryId : null}],
       minBet: minBet,
       bank: 0
     }
@@ -50,7 +51,7 @@ function playerConnect(sessionId, username, coins, minBet) {
     const players = currentRoom.players
 
     this.join(sessionId)
-    players.push({username, coins, id: this.id, move: false, active: false, payoff: 0, bet: 0})
+    players.push({username, coins, id: this.id, move: false, active: false, payoff: 0, bet: 0, queryId : queryId ? queryId : null})
 
     if (room.size === 2) {
       players[players.length - 1].active = true
@@ -131,8 +132,6 @@ function initAzi(sessionId, dealer) {
 
 function bet(betValue, action, sessionId) {
   const room = rooms[sessionId]
-
-  console.log(room)
 
   if (room.gamePhase === 'azi') {
     const activePlayers = room.players.filter(player => player.active && player.aziBet !== 0)
