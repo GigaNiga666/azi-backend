@@ -35,14 +35,19 @@ async function startBot() {
 }
 
 async function answerWebAppQueryHandler(queryId, msg) {
-  await telegram.answerWebAppQuery(queryId, {
-    type:'article',
-    id: queryId,
-    title: 'Результаты игры',
-    input_message_content: {
-      message_text: msg
-    }
-  })
+  try {
+    await telegram.answerWebAppQuery(queryId, {
+      type:'article',
+      id: queryId,
+      title: 'Результаты игры',
+      input_message_content: {
+        message_text: msg
+      }
+    })
+  }
+  catch (e) {
+    console.log(e)
+  }
 }
 
 module.exports = {startBot, answerWebAppQueryHandler}
