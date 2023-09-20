@@ -10,7 +10,7 @@ const getUsernameScene = new BaseScene('getUsername')
 getUsernameScene.enter((ctx) => ctx.reply('Отправь id комнаты'))
 getUsernameScene.on('text', (ctx) => {
   ctx.reply('Ваша комната:', Markup.inlineKeyboard([
-    Markup.button.webApp('Подключиться', `https://azi-frontend.vercel.app/${ctx.message.text}?name=${ctx.from.username && ctx.from.first_name}&coins=10000&minBet=50`),
+    Markup.button.webApp('Подключиться', `https://azi-frontend.vercel.app/${ctx.message.text}?name=${ctx.from.username ? ctx.from.username : ctx.from.first_name}&coins=10000&minBet=50`),
   ]))
   ctx.scene.leave()
 })
