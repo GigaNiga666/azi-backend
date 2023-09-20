@@ -10,7 +10,7 @@ const getUsernameScene = new BaseScene('getUsername')
 getUsernameScene.enter((ctx) => ctx.reply('Отправь id комнаты'))
 getUsernameScene.on('text', (ctx) => {
   ctx.reply('Ваша комната:', Markup.inlineKeyboard([
-    Markup.button.webApp('Подключиться', `https://azi-frontend.vercel.app/${ctx.message.text}?name=${ctx.from.username + '222'}&coins=10000&minBet=50`),
+    Markup.button.webApp('Подключиться', `https://azi-frontend.vercel.app/${ctx.message.text}?name=${ctx.from.username && ctx.from.first_name}&coins=10000&minBet=50`),
   ]))
   ctx.scene.leave()
 })
@@ -23,7 +23,7 @@ bot.use(stage.middleware())
 
 bot.start((ctx) => {
   ctx.reply(`Выберете действие:`, Markup.inlineKeyboard([
-    Markup.button.webApp('Создать комнату', `https://azi-frontend.vercel.app/${randomIntegerMinMax(1000,9999)}?name=${ctx.from.username}&coins=10000&minBet=50`),
+    Markup.button.webApp('Создать комнату', `https://azi-frontend.vercel.app/${randomIntegerMinMax(1000,9999)}?name=${ctx.from.username && ctx.from.first_name}&coins=10000&minBet=50`),
     Markup.button.callback('Подключиться к комнате', 'connectRoom'),
   ]))
 })
