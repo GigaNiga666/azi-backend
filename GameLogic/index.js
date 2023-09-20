@@ -40,7 +40,6 @@ function disconnect(message = null) {
 
 function playerConnect(sessionId, username, coins, minBet, queryId) {
   const room = io.sockets.adapter.rooms.get(sessionId)
-  console.log(this.id)
 
   if (room === undefined) {
     this.join(sessionId)
