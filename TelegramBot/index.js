@@ -23,7 +23,7 @@ bot.use(stage.middleware())
 
 bot.start((ctx) => {
   ctx.reply(`Выберете действие:`, Markup.inlineKeyboard([
-    Markup.button.webApp('Создать комнату', `https://azi-frontend.vercel.app/${randomIntegerMinMax(1000,9999)}?name=${ctx.from.username && ctx.from.first_name}&coins=10000&minBet=50`),
+    Markup.button.webApp('Создать комнату', `https://azi-frontend.vercel.app/${randomIntegerMinMax(1000,9999)}?name=${ctx.from.username ? ctx.from.username : ctx.from.first_name}&coins=10000&minBet=50`),
     Markup.button.callback('Подключиться к комнате', 'connectRoom'),
   ]))
 })
