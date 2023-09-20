@@ -27,7 +27,6 @@ bot.start((ctx) => {
     Markup.button.callback('Подключиться к комнате', 'connectRoom'),
   ]))
 })
-bot.on('message', ctx => ctx.reply('What?'))
 bot.action('connectRoom', (ctx) => ctx.scene.enter('getUsername'))
 
 async function startBot() {

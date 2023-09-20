@@ -29,7 +29,7 @@ function disconnect(message = null) {
       if (player.move && room.gamePhase === 'trade' || room.gamePhase === 'blindTrade') bet(0, 'pass', room)
       else if (player.move) takeElement(activePlayers, activePlayers.indexOf(player) + 1)
       let exitMsg = player.coins < room.minBet ? 'У вас недостаточно денег для ставок' : message
-      if (exitMsg) answerWebAppQueryHandler(player.queryId, exitMsg)
+      if (exitMsg && message !== 'transport close') answerWebAppQueryHandler(player.queryId, exitMsg)
 
       currentRoom.players.splice(index, 1)
 
