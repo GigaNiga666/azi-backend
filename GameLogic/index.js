@@ -234,6 +234,7 @@ function bet(betValue, action, sessionId) {
             }
           }
           else {
+            io.to(sessionId).emit('updatePlayers', room.players)
             for (const player of room.players) {
               player.action = null
             }
