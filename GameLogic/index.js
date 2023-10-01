@@ -165,9 +165,8 @@ function bet(betValue, action, sessionId) {
           sleep(1000).then(() => io.to(sessionId).emit('tradeEnd', room.players, room.bank))
         }
         else {
-          io.to(sessionId).emit('updatePlayers', room.players)
           nextPlayer.move = true
-          sleep(1000).then(() => io.to(sessionId).emit('bet', room.players, room.bank, nextPlayer.aziBet, nextPlayer.aziBet, room.descBet, false, allIn, false))
+          io.to(sessionId).emit('bet', room.players, room.bank, nextPlayer.aziBet, nextPlayer.aziBet, room.descBet, false, allIn, false)
         }
       }
     })
@@ -195,13 +194,12 @@ function bet(betValue, action, sessionId) {
         }
         else if (action === 'pass') { // TODO сделать чтобы небыло больше 3 сбросов
           if (isBlindTrade && player === room.dealer) {
-            io.to(sessionId).emit('updatePlayers', room.players)
             for (const player of room.players) {
               player.action = null
             }
             takeElement(activePlayers, activePlayers.indexOf(room.dealer) + 1).move = true
             room.gamePhase = 'trade'
-            sleep(1000).then(() => io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.minBet))
+            io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.minBet)
             return
           }
           player.active = false
@@ -219,6 +217,7 @@ function bet(betValue, action, sessionId) {
 
         if ((nextPlayer.bet === room.descBet || nextPlayer === undefined) && room.descBet !== 0) {
           if (isBlindTrade) {
+            io.to(sessionId).emit('updatePlayers', room.players)
             const selectNextPlayerArray = room.players.filter(player => (player.active && player.action !== 'allIn') || player === room.dealer)
             const nextPlayerMove = takeElement(selectNextPlayerArray, selectNextPlayerArray.indexOf(room.dealer) + 1).move = true
             for (const player of room.players) {
@@ -226,18 +225,15 @@ function bet(betValue, action, sessionId) {
             }
 
             if (nextPlayerMove === room.dealer) {
-              io.to(sessionId).emit('updatePlayers', room.players)
               room.gamePhase = 'round'
               sleep(1000).then(() => io.to(sessionId).emit('tradeEnd', room.players, room.bank))
             }
             else {
-              io.to(sessionId).emit('updatePlayers', room.players)
               room.gamePhase = 'trade'
               sleep(1000).then(() => io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.descBet))
             }
           }
           else {
-            io.to(sessionId).emit('updatePlayers', room.players)
             for (const player of room.players) {
               player.action = null
             }
