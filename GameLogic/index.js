@@ -199,6 +199,7 @@ function bet(betValue, action, sessionId) {
             }
             takeElement(activePlayers, activePlayers.indexOf(room.dealer) + 1).move = true
             room.gamePhase = 'trade'
+            room.dealerRaiseBet = false
             io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.minBet)
             return
           }
@@ -230,6 +231,7 @@ function bet(betValue, action, sessionId) {
             }
             else {
               room.gamePhase = 'trade'
+              room.dealerRaiseBet = false
               sleep(1000).then(() => io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.descBet))
             }
           }
