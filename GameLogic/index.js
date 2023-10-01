@@ -246,6 +246,7 @@ function bet(betValue, action, sessionId) {
         }
 
         if ((isBlindTrade && action === 'call' && nextPlayer !== room.dealer) || (room.dealerRaiseBet)) {
+          console.log(room.gamePhase)
           canUpBet = false
         }
 
