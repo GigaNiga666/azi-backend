@@ -178,8 +178,6 @@ function bet(betValue, action, sessionId) {
         const nextPlayer = takeElement(activePlayers, index + 1)
         let minRaise, maxRaise, allIn, canUpBet = true, isBlindTrade = room.gamePhase === 'blindTrade';
 
-        console.log(room.gamePhase)
-
         if (player === room.dealer && player.bet !== 0 && !room.dealerRaiseBet) {
           room.dealerRaiseBet = true
         }
@@ -247,8 +245,9 @@ function bet(betValue, action, sessionId) {
           return
         }
 
+        console.log(room.dealerRaiseBet)
+
         if ((isBlindTrade && action === 'call' && nextPlayer !== room.dealer) || (room.dealerRaiseBet)) {
-          console.log(room.gamePhase)
           canUpBet = false
         }
 
