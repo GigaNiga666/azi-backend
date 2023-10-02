@@ -347,7 +347,7 @@ function endRound(sessionId) {
   }
 
   highestCardPlayer.payoff++
-  sleep(1000).then(() => {
+  sleep(500).then(() => {
     for (const player of players) {
       player.movedCard = null
     }
@@ -365,27 +365,31 @@ function endRound(sessionId) {
       highestCardPlayer.move = true
       io.to(sessionId).emit('roundEnd', `Выиграл ставку игрок: ${highestCardPlayer.username}`, rooms[sessionId].players, rooms[sessionId].bank)
     } else {
+      highestCardPlayer.action = 'win'
+      io.to(sessionId).emit('updatePlayers', rooms[sessionId].players)
 
-      for (const player of players) {
-        player.action = null
-      }
+      sleep(1000).then(() => {
+        for (const player of players) {
+          player.action = null
+        }
 
-      if (rooms[sessionId].gamePhase === 'aziRound' && highestCardPlayer.aziBet === 0 && highestCardPlayer.coins === 0) {
-        highestCardPlayer.coins += rooms[sessionId].bank
-        rooms[sessionId].bank = 0
-      }
-      else if (highestCardPlayer.coins === 0) {
-        const winCoins = Math.round(rooms[sessionId].bank * (Math.trunc(highestCardPlayer.bet /  rooms[sessionId].descBet * 100) / 100) / 10 ) * 10
-        highestCardPlayer.coins = winCoins
-        rooms[sessionId].bank -= winCoins
-      }
-      else {
-        highestCardPlayer.coins += rooms[sessionId].bank
-        rooms[sessionId].bank = 0
-      }
+        if (rooms[sessionId].gamePhase === 'aziRound' && highestCardPlayer.aziBet === 0 && highestCardPlayer.coins === 0) {
+          highestCardPlayer.coins += rooms[sessionId].bank
+          rooms[sessionId].bank = 0
+        }
+        else if (highestCardPlayer.coins === 0) {
+          const winCoins = Math.round(rooms[sessionId].bank * (Math.trunc(highestCardPlayer.bet /  rooms[sessionId].descBet * 100) / 100) / 10 ) * 10
+          highestCardPlayer.coins = winCoins
+          rooms[sessionId].bank -= winCoins
+        }
+        else {
+          highestCardPlayer.coins += rooms[sessionId].bank
+          rooms[sessionId].bank = 0
+        }
 
-      io.to(sessionId).emit('roundEnd', `Раунд выиграл: ${highestCardPlayer.username}`, rooms[sessionId].players, rooms[sessionId].bank)
-      initGamePhase(sessionId, highestCardPlayer)
+        io.to(sessionId).emit('roundEnd', `Раунд выиграл: ${highestCardPlayer.username}`, rooms[sessionId].players, rooms[sessionId].bank)
+        initGamePhase(sessionId, highestCardPlayer)
+      })
     }
   })
 }
