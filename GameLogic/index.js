@@ -14,28 +14,54 @@ function init(webSocket) {
     socket.on('playerConnect', playerConnect)
     socket.on('disconnecting', disconnect)
     socket.on('move', move)
+    socket.on('timerUpdate', (value, sessionId) => {
+      io.to(sessionId).emit('timerUpdate', value)
+    })
     socket.on('bet', bet)
   })
 }
 
-function disconnect(message = null) {
+function disconnect() {
   for (const room of this.rooms) {
     if (room !== this.id) {
-      const currentRoom = rooms[room]
-      const player = currentRoom.players.find(player => player.id === this.id)
-      const index = currentRoom.players.indexOf(player)
-      const activePlayers = currentRoom.players.filter(player1 => player1.active)
-      if (player === room.dealer) room.dealer = takeElement(activePlayers, activePlayers.indexOf(player) + 1)
-      if (player.move && room.gamePhase === 'trade' || room.gamePhase === 'blindTrade') bet(0, 'pass', room)
-      else if (player.move) takeElement(activePlayers, activePlayers.indexOf(player) + 1)
-      let exitMsg = player.coins < room.minBet ? 'У вас недостаточно денег для ставок' : message
-      if (exitMsg && message !== 'transport close') answerWebAppQueryHandler(player.queryId, exitMsg)
-
-      currentRoom.players.splice(index, 1)
-
-      io.to(room).emit('playerLeave', currentRoom.players)
+      kickPlayer(room, this.id)
+      this.leave(room)
     }
   }
+}
+
+function kickPlayer(sessionId, id) {
+  const room = rooms[sessionId]
+  const player = room.players.find(player => player.id === id)
+  const index = room.players.indexOf(player)
+  const activePlayers = room.players.filter(player => player.active)
+
+  if (room.dealer === player) {
+    room.dealer = takeElement(activePlayers, index + 1)
+  }
+
+  if (player.move && room.gamePhase !== 'round') bet(0, 'pass', sessionId, id)
+  else if (room.gamePhase === 'round') move(null, sessionId, id)
+
+  room.players.splice(index, 1)
+
+  const newActivePlayers = room.players.filter(player => player.active)
+
+  if (newActivePlayers.length === 1) {
+    newActivePlayers[0].coins += room.bank
+    room.bank = 0
+    newActivePlayers[0].action = null
+    newActivePlayers[0].cards = []
+    newActivePlayers[0].movedCard = null
+    newActivePlayers[0].move = false
+    if (room.players.length >= 2)
+      initGamePhase(sessionId, newActivePlayers[0])
+    else
+      io.to(sessionId).emit('updatePlayers', room.players, null, room.bank)
+  }
+  else
+    io.to(sessionId).emit('updatePlayers', room.players)
+
 }
 
 function playerConnect(sessionId, username, coins, minBet, queryId) {
@@ -55,7 +81,7 @@ function playerConnect(sessionId, username, coins, minBet, queryId) {
     this.join(sessionId)
     players.push({username, coins, id: this.id, move: false, active: false, payoff: 0, bet: 0, queryId : queryId ? queryId : null})
 
-    if (room.size === 2) {
+    if (room.size === 4) {
       players[players.length - 1].active = true
       io.to(sessionId).emit('updatePlayers', currentRoom.players)
       initGamePhase(sessionId)
@@ -63,9 +89,9 @@ function playerConnect(sessionId, username, coins, minBet, queryId) {
       io.to(sessionId).emit('updatePlayers', currentRoom.players, currentRoom.trumpedCard)
     }
   } else if (coins < rooms[sessionId].minBet) {
-    disconnect('У вас недостаточно денег для ставок')
+    // disconnect('У вас недостаточно денег для ставок')
   } else {
-    disconnect('Данная комната полная')
+    // disconnect('Данная комната полная')
   }
 }
 
@@ -76,7 +102,7 @@ function initGamePhase(sessionId, dealerPlayer = null) {
 
   for (const player of players) {
     if (player.coins < room.minBet) {
-      disconnect('У вас недостаточно денег для участия')
+      // disconnect('У вас недостаточно денег для участия')
     } else {
       player.bet = 0
       player.aziBet = 0
@@ -105,7 +131,7 @@ function initAzi(sessionId, dealer) {
 
   for (const player of players) {
     if (player.coins < room.minBet && player.action !== 'round') {
-      disconnect('У вас недостаточно денег для участия')
+      // disconnect('У вас недостаточно денег для участия')
     } else {
 
       if (player.action !== 'round') {
@@ -132,13 +158,13 @@ function initAzi(sessionId, dealer) {
   io.to(sessionId).emit('cardHandout', players, room.trumpedCard, room.minBet, room.bank, room.dealer.aziBet)
 }
 
-function bet(betValue, action, sessionId) {
+function bet(betValue, action, sessionId, kickId) {
   const room = rooms[sessionId]
 
   if (room.gamePhase === 'azi') {
     const activePlayers = room.players.filter(player => player.active && player.aziBet !== 0)
     activePlayers.forEach((player, index) => {
-      if (player.id === this.id) {
+      if ((kickId && player.id === kickId) || player.id === this.id) {
         let allIn;
         player.bet = betValue
         player.coins -= betValue
@@ -174,8 +200,8 @@ function bet(betValue, action, sessionId) {
   else {
     const activePlayers = room.players.filter(player => player.active && player.coins !== 0)
     activePlayers.forEach((player, index) => {
-      if (player.id === this.id) {
-        const nextPlayer = takeElement(activePlayers, index + 1)
+      if ((kickId && player.id === kickId) || player.id === this.id) {
+        let nextPlayer = takeElement(activePlayers, index + 1)
         let minRaise, maxRaise, allIn, canUpBet = true, isBlindTrade = room.gamePhase === 'blindTrade';
 
         if (player === room.dealer && player.bet !== 0 && !room.dealerRaiseBet) {
@@ -193,16 +219,23 @@ function bet(betValue, action, sessionId) {
           if (room.gamePhase === 'trade') room.dealer = player
         }
         else if (action === 'pass') { // TODO сделать чтобы небыло больше 3 сбросов
-          if (isBlindTrade && player === room.dealer) {
-            for (const player of room.players) {
-              player.action = null
-            }
-            takeElement(activePlayers, activePlayers.indexOf(room.dealer) + 1).move = true
-            room.gamePhase = 'trade'
-            room.dealerRaiseBet = false
-            io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.minBet)
-            return
-          }
+         if (kickId === undefined)
+           if (isBlindTrade && player === room.dealer && !room.dealerRaiseBet) {
+             for (const player of room.players) {
+               player.action = null
+             }
+             takeElement(activePlayers, activePlayers.indexOf(room.dealer) + 1).move = true
+             room.gamePhase = 'trade'
+             room.dealerRaiseBet = false
+             io.to(sessionId).emit('blindTradeEnd', room.players, room.bank, room.minBet)
+             return
+           }
+           else if (isBlindTrade && room.dealerRaiseBet && player === room.dealer) {
+             const nextPlayerBeginDealer = takeElement(activePlayers, activePlayers.indexOf(room.dealer) + 1)
+             room.dealer = nextPlayerBeginDealer
+             nextPlayer = nextPlayerBeginDealer
+           }
+
           player.active = false
           player.bet = 0
           player.cards = []
@@ -247,8 +280,6 @@ function bet(betValue, action, sessionId) {
           return
         }
 
-        console.log(room.dealerRaiseBet)
-
         if ((isBlindTrade && action === 'call' && nextPlayer !== room.dealer) || (room.dealerRaiseBet)) {
           canUpBet = false
         }
@@ -272,7 +303,7 @@ function bet(betValue, action, sessionId) {
 
         io.to(sessionId).emit('bet', room.players, room.bank, minRaise, maxRaise, room.descBet, canCallValue, allIn, canUpBet)
 
-        if (player.amountPass === 2) disconnect('Вы слишком много раз отказывались от ставок')
+        // if (player.amountPass === 2) disconnect('Вы слишком много раз отказывались от ставок')
       }
     })
   }
@@ -302,11 +333,11 @@ function cardHandout(cards) {
   return playerCards
 }
 
-function move(card, sessionId) {
+function move(card, sessionId, id) {
   const activePlayers = rooms[sessionId].players.filter(player => player.active)
 
   activePlayers.forEach((player, index) => {
-    if (player.id === this.id) {
+    if ((id && player.id === id) || player.id === this.id) {
       const nextPlayer = takeElement(activePlayers, index + 1)
       player.movedCard = card
       player.cards = player.cards.filter(playerCard => !(playerCard.suit === card.suit && playerCard.value === card.value))
