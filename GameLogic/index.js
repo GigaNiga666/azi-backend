@@ -15,7 +15,15 @@ function init(webSocket) {
     socket.on('disconnecting', disconnect)
     socket.on('move', move)
     socket.on('timerUpdate', (value, sessionId) => {
-      io.to(sessionId).emit('timerUpdate', value)
+      if (value === 0) {
+        for (const room of this.rooms) {
+          if (room !== this.id) {
+            kickPlayer(room, this.id)
+            this.leave(room)
+          }
+        }
+      }
+      else io.to(sessionId).emit('timerUpdate', value)
     })
     socket.on('bet', bet)
   })
@@ -89,9 +97,9 @@ function playerConnect(sessionId, username, coins, minBet, queryId) {
       io.to(sessionId).emit('updatePlayers', currentRoom.players, currentRoom.trumpedCard)
     }
   } else if (coins < rooms[sessionId].minBet) {
-    // disconnect('У вас недостаточно денег для ставок')
+    answerWebAppQueryHandler(queryId, 'У вас недостаточно денег для ставок')
   } else {
-    // disconnect('Данная комната полная')
+    answerWebAppQueryHandler(queryId, 'Данная комната полная')
   }
 }
 
@@ -102,7 +110,7 @@ function initGamePhase(sessionId, dealerPlayer = null) {
 
   for (const player of players) {
     if (player.coins < room.minBet) {
-      // disconnect('У вас недостаточно денег для участия')
+      answerWebAppQueryHandler(player.queryId, 'У вас недостаточно денег для ставок')
     } else {
       player.bet = 0
       player.aziBet = 0
@@ -131,7 +139,7 @@ function initAzi(sessionId, dealer) {
 
   for (const player of players) {
     if (player.coins < room.minBet && player.action !== 'round') {
-      // disconnect('У вас недостаточно денег для участия')
+      answerWebAppQueryHandler(player.queryId, 'У вас недостаточно денег для ставок')
     } else {
 
       if (player.action !== 'round') {
@@ -303,7 +311,9 @@ function bet(betValue, action, sessionId, kickId) {
 
         io.to(sessionId).emit('bet', room.players, room.bank, minRaise, maxRaise, room.descBet, canCallValue, allIn, canUpBet)
 
-        // if (player.amountPass === 2) disconnect('Вы слишком много раз отказывались от ставок')
+        if (player.amountPass === 2) {
+          answerWebAppQueryHandler(player.queryId, 'Вы слишком много раз отказывались от ставок')
+        }
       }
     })
   }
