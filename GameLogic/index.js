@@ -16,7 +16,7 @@ function init(webSocket) {
     socket.on('move', move)
     socket.on('timerUpdate', (value, sessionId) => {
       if (value === 0) {
-        kickPlayer(rooms[sessionId], this.id)
+        kickPlayer(sessionId, this.id)
         this.leave(sessionId)
       }
       else io.to(sessionId).emit('timerUpdate', value)
