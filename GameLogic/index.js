@@ -81,7 +81,7 @@ function playerConnect(sessionId, username, coins, minBet, queryId) {
     this.join(sessionId)
     players.push({username, coins, id: this.id, move: false, active: false, payoff: 0, bet: 0, queryId : queryId ? queryId : null})
 
-    if (room.size === 4) {
+    if (room.size === 2) {
       players[players.length - 1].active = true
       io.to(sessionId).emit('updatePlayers', currentRoom.players)
       initGamePhase(sessionId)
